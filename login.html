@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | FFJS</title>
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="auth-container">
+        <div class="auth-box">
+
+            <div class="auth-brand">
+                <h1>FFJS</h1>
+                <p>Fair Football Judgement System</p>
+            </div>
+
+            <div class="auth-alert" id="formAlert">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <span id="alertMsg"></span>
+            </div>
+
+            <form id="loginForm" novalidate>
+
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="email" placeholder="Enter your email">
+                    </div>
+                    <span class="error-msg">Enter a valid email address</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-box">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" placeholder="Enter your password">
+                    </div>
+                    <span class="error-msg">Password is required</span>
+                </div>
+
+                <div class="options">
+                    <label>
+                        <input type="checkbox" id="remember"> Remember Me
+                    </label>
+                    <a href="forgot-password.html">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">Login</button>
+
+            </form>
+            <div class="bottom-text">
+                <p><a href="index.html">🔙Back</a></p>
+            </div>
+            <div class="bottom-text">
+                <p>Don't have an account? <a href="register.html">Register</a></p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function showAlert(msg) {
+            const alert = document.getElementById('formAlert');
+            alert.className = 'auth-alert show error';
+            document.getElementById('alertMsg').textContent = msg;
+        }
+
+        const roleRedirects = {
+            administrator: 'admin/dashboard.html',
+            referee: 'referee/dashboard.html',
+            manager: 'manager/dashboard.html',
+            viewer: 'viewer/standings.html'
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showAlert('Please enter your email and password.');
+                return;
+            }
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                const response = await fetch('backend/api/auth/login.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // data.data is what login.php returns via sendSuccess()
+                    sessionStorage.setItem('user_id', data.data.id);
+                    sessionStorage.setItem('user_name', data.data.full_name);
+                    sessionStorage.setItem('user_role', data.data.role);
+                    sessionStorage.setItem('user_email', data.data.email);
+
+                    const redirect = roleRedirects[data.data.role] || 'index.html';
+                    window.location.href = redirect;
+                } else {
+                    showAlert(data.message || 'Invalid email or password.');
+                }
+
+            } catch (err) {
+                showAlert('Could not connect to server. Try again later.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

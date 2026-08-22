@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .team-info-box {
+            background: white;
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+        }
+        
+        .team-info-box h3 {
+            color: #0b5d1e;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        
+        .team-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .detail-item {
+            background: #f0fdf4;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .detail-item .label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .detail-item .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0b5d1e;
+        }
+        
+        .edit-team-btn {
+            background: #0b5d1e;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .edit-team-btn:hover {
+            background: #15803d;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 440px;
+        }
+        
+        .modal-box h3 {
+            margin-bottom: 20px;
+            color: #0b5d1e;
+        }
+        
+        .modal-box .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .modal-box .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .modal-box .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-save {
+            background: #0b5d1e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .modal-alert {
+            display: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .modal-alert.show {
+            display: block;
+        }
+        
+        .modal-alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .modal-alert.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .no-team-box {
+            background: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .no-team-box p {
+            color: #666;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li class="active"><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="register-team.html"><i class="fa-solid fa-users"></i> Register Team</a></li>
+                <li><a href="register-players.html"><i class="fa-solid fa-person-running"></i> Register Players</a></li>
+                <li><a href="fixtures.html"><i class="fa-solid fa-futbol"></i> Fixtures</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+
+            <div class="topbar">
+                <h1>Team Manager Dashboard</h1>
+                <div class="admin-info"><i class="fa-solid fa-user"></i><span id="userName">Loading...</span></div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="cards" style="margin-bottom:24px;">
+                <div class="card"><i class="fa-solid fa-futbol"></i>
+                    <div>
+                        <h3 id="statFixtures">--</h3>
+                        <p>Upcoming Fixtures</p>
+                    </div>
+                </div>
+                <div class="card"><i class="fa-solid fa-trophy"></i>
+                    <div>
+                        <h3 id="statAwards">--</h3>
+                        <p>Awards</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Details -->
+            <div id="teamSection">
+                <div style="text-align:center;padding:30px;color:#888;">Loading team details...</div>
+            </div>
+
+            <!-- Players List -->
+            <div id="playersSection" style="display:none;">
+                <div class="table-section">
+                    <div class="section-header">
+                        <h2>Team Players</h2>
+                        <a href="register-players.html" class="add-btn" style="text-decoration:none;padding:8px 16px;">Add Player</a>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playersTbody">
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit Team Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-box">
+            <h3>Edit Team Details</h3>
+            <div class="modal-alert" id="editAlert"></div>
+            <form id="editTeamForm">
+                <input type="hidden" id="editTeamId">
+                <div class="form-group">
+                    <label>Team Name</label>
+                    <input type="text" id="editTeamName">
+                </div>
+                <div class="form-group">
+                    <label>Max Players</label>
+                    <input type="number" id="editTeamPlayers" min="1">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+                    <button type="submit" class="btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['manager']);
+
+        async function loadDashboard() {
+            // Stats
+            const stats = await apiGet('admin/stats.php');
+            if (stats.success) {
+                renderStat('statFixtures', stats.data.fixtures);
+                renderStat('statAwards', stats.data.awards);
+            }
+
+            // Team info
+            const teamInfo = await apiGet('manager/players.php', {
+                action: 'team_info'
+            });
+            const section = document.getElementById('teamSection');
+
+            if (!teamInfo.success || !teamInfo.data) {
+                section.innerHTML = `
+                    <div class="no-team-box">
+                        <i class="fa-solid fa-users" style="font-size:40px;color:#ccc;margin-bottom:16px;"></i>
+                        <p>You have not registered a team yet.</p>
+                        <a href="register-team.html" class="edit-team-btn" style="text-decoration:none;">Register Team</a>
+                    </div>`;
+                return;
+            }
+
+            const t = teamInfo.data;
+            section.innerHTML = `
+                <div class="team-info-box">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3><i class="fa-solid fa-shield-halved"></i> ${t.name}</h3>
+                        <button class="edit-team-btn" onclick="openEditModal(${t.id}, '${t.name}', ${t.total_players})">
+                            <i class="fa-solid fa-pen"></i> Edit Team
+                        </button>
+                    </div>
+                    <div class="team-detail-grid">
+                        <div class="detail-item">
+                            <div class="label">Team Name</div>
+                            <div class="value" style="font-size:16px;">${t.name}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Max Squad Size</div>
+                            <div class="value">${t.total_players}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Registered Players</div>
+                            <div class="value">${t.current_count}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="label">Slots Available</div>
+                            <div class="value" style="color:${t.slots_left > 0 ? '#0b5d1e' : '#dc2626'}">
+                                ${t.slots_left}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // Load players
+            document.getElementById('playersSection').style.display = 'block';
+            await loadPlayers();
+        }
+
+        async function loadPlayers() {
+            const res = await apiGet('manager/players.php', {
+                action: 'list'
+            });
+            if (res.success) {
+                const rows = res.data.map(p => `
+                    <tr>
+                        <td>${p.jersey_number}</td>
+                        <td>${p.name}</td>
+                        <td>${p.position}</td>
+                        <td>${p.status === 'active'
+                            ? '<span class="completed">Active</span>'
+                            : '<span class="pending">Inactive</span>'}</td>
+                    </tr>`);
+                renderTable('playersTbody', rows, 'No players registered yet. <a href="register-players.html">Add players</a>.');
+            }
+        }
+
+        function openEditModal(id, name, players) {
+            document.getElementById('editTeamId').value = id;
+            document.getElementById('editTeamName').value = name;
+            document.getElementById('editTeamPlayers').value = players;
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+            document.getElementById('editAlert').className = 'modal-alert';
+        }
+
+        document.getElementById('editTeamForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const alertEl = document.getElementById('editAlert');
+            const res = await apiPost('manager/register_team.php', {
+                action: 'edit',
+                id: document.getElementById('editTeamId').value,
+                name: document.getElementById('editTeamName').value.trim(),
+                players: document.getElementById('editTeamPlayers').value
+            });
+
+            if (res.success) {
+                alertEl.className = 'modal-alert show success';
+                alertEl.textContent = 'Team updated successfully!';
+                loadDashboard();
+                setTimeout(closeEditModal, 1500);
+            } else {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = res.message || 'Failed to update.';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+
+</html>

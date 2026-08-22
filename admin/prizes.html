@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prize Management | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .tab-btn {
+            padding: 10px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab-btn.active {
+            color: #0b5d1e;
+            border-bottom-color: #0b5d1e;
+            font-weight: bold;
+        }
+        
+        .tab-panel {
+            display: none;
+        }
+        
+        .tab-panel.active {
+            display: block;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-box h3 {
+            margin-bottom: 20px;
+            color: #0b5d1e;
+        }
+        
+        .modal-box .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .modal-box .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .modal-box .form-group input,
+        .modal-box .form-group select,
+        .modal-box .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-save {
+            background: #0b5d1e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .btn-save:hover {
+            background: #15803d;
+        }
+        
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .modal-alert {
+            display: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .modal-alert.show {
+            display: block;
+        }
+        
+        .modal-alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .modal-alert.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .mvp-box {
+            background: #fefce8;
+            border: 1px solid #fde047;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #713f12;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="teams.html"><i class="fa-solid fa-users"></i> Teams</a></li>
+                <li><a href="matches.html"><i class="fa-solid fa-futbol"></i> Matches</a></li>
+                <li><a href="referees.html"><i class="fa-solid fa-user-tie"></i> Referees</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li class="active"><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="reports.html"><i class="fa-solid fa-file"></i> Reports</a></li>
+                <li><a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Prize Management</h1>
+                <div style="display:flex;gap:10px;">
+                    <button class="add-btn" onclick="openAllocateModal()">Allocate Prize</button>
+                    <button class="add-btn" style="background:#15803d;" onclick="openCategoryModal()">Add Category</button>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" id="tabBtn1" onclick="switchTab('distribution')">Prize Distribution</button>
+                <button class="tab-btn" id="tabBtn2" onclick="switchTab('categories')">Prize Categories</button>
+            </div>
+
+            <div class="tab-panel active" id="tab-distribution">
+                <div class="table-section">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Winner</th>
+                                <th>Prize</th>
+                                <th>Criteria</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="distributionTbody">
+                            <tr>
+                                <td colspan="5" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-panel" id="tab-categories">
+                <div class="table-section">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Criteria</th>
+                                <th>Amount</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTbody">
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Allocate Prize Modal -->
+    <div class="modal-overlay" id="allocateModal">
+        <div class="modal-box">
+            <h3>Allocate Prize</h3>
+            <div class="modal-alert" id="allocateAlert"></div>
+            <div class="mvp-box" id="mvpBox"></div>
+
+            <div class="form-group">
+                <label>Prize Category</label>
+                <select id="prizeId" onchange="onPrizeChange()">
+                    <option value="">Select Prize</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Winner Type</label>
+                <select id="winnerType" onchange="onWinnerTypeChange()">
+                    <option value="team">Team</option>
+                    <option value="player">Player</option>
+                    <option value="referee">Referee</option>
+                </select>
+            </div>
+
+            <!-- Team -->
+            <div class="form-group" id="grp-team">
+                <label>Select Team</label>
+                <select id="teamSelect">
+                    <option value="">Select Team</option>
+                </select>
+            </div>
+
+            <!-- Player -->
+            <div class="form-group" id="grp-player" style="display:none;">
+                <label>Player Name</label>
+                <input type="text" id="playerNameInput" placeholder="Enter player full name">
+            </div>
+
+            <!-- Referee -->
+            <div class="form-group" id="grp-referee" style="display:none;">
+                <label>Select Referee</label>
+                <select id="refereeSelect">
+                    <option value="">Select Referee</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeAllocateModal()">Cancel</button>
+                <button type="button" class="btn-save" id="allocateBtn" onclick="submitAllocate()">Allocate</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal-box">
+            <h3>Add Prize Category</h3>
+            <div class="modal-alert" id="categoryAlert"></div>
+
+            <div class="form-group">
+                <label>Prize Title</label>
+                <input type="text" id="catTitle" placeholder="e.g. Best Goalkeeper">
+            </div>
+            <div class="form-group">
+                <label>Criteria</label>
+                <textarea id="catCriteria" rows="3" placeholder="Describe how this prize is awarded"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Amount (TZS) — leave 0 if not monetary</label>
+                <input type="number" id="catAmount" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>Prize Type</label>
+                <select id="catType">
+                    <option value="trophy">Trophy</option>
+                    <option value="money">Money</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="award">Award</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeCategoryModal()">Cancel</button>
+                <button type="button" class="btn-save" id="catBtn" onclick="submitCategory()">Add Category</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['administrator']);
+
+        // ── Tab switching ──────────────────────────
+        function switchTab(tab) {
+            document.getElementById('tabBtn1').classList.toggle('active', tab === 'distribution');
+            document.getElementById('tabBtn2').classList.toggle('active', tab === 'categories');
+            document.getElementById('tab-distribution').classList.toggle('active', tab === 'distribution');
+            document.getElementById('tab-categories').classList.toggle('active', tab === 'categories');
+        }
+
+        // ── Load distribution table ────────────────
+        async function loadDistribution() {
+            var res = await apiGet('admin/prizes.php', {
+                action: 'distribution'
+            });
+            if (res.success) {
+                var rows = res.data.map(function(p) {
+                    return '<tr>' +
+                        '<td><strong>' + p.winner_name + '</strong></td>' +
+                        '<td>' + p.prize + '</td>' +
+                        '<td>' + p.criteria + '</td>' +
+                        '<td>' + p.winner_type + '</td>' +
+                        '<td>' + statusBadge(p.status) + '</td>' +
+                        '</tr>';
+                });
+                renderTable('distributionTbody', rows, 'No prizes allocated yet.');
+            }
+        }
+
+        // ── Load categories table ──────────────────
+        async function loadCategories() {
+            var res = await apiGet('admin/prizes.php', {
+                action: 'categories'
+            });
+            if (res.success) {
+                var rows = res.data.map(function(p) {
+                    var amount = parseFloat(p.amount) > 0 ?
+                        'TZS ' + Number(p.amount).toLocaleString() :
+                        '—';
+                    return '<tr>' +
+                        '<td><strong>' + p.title + '</strong></td>' +
+                        '<td>' + p.criteria + '</td>' +
+                        '<td>' + amount + '</td>' +
+                        '<td>' + p.prize_type + '</td>' +
+                        '</tr>';
+                });
+                renderTable('categoriesTbody', rows, 'No prize categories yet.');
+            }
+        }
+
+        // ── Open allocate modal ────────────────────
+        async function openAllocateModal() {
+            // Reset form
+            document.getElementById('prizeId').value = '';
+            document.getElementById('winnerType').value = 'team';
+            document.getElementById('playerNameInput').value = '';
+            document.getElementById('allocateAlert').className = 'modal-alert';
+            document.getElementById('mvpBox').style.display = 'none';
+
+            // Load prizes into dropdown
+            var prizes = await apiGet('admin/prizes.php', {
+                action: 'categories'
+            });
+            var prizeEl = document.getElementById('prizeId');
+            prizeEl.innerHTML = '<option value="">Select Prize</option>';
+            if (prizes.success) {
+                prizes.data.forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.text = p.title;
+                    opt.setAttribute('data-title', p.title);
+                    prizeEl.appendChild(opt);
+                });
+            }
+
+            // Load teams into dropdown
+            var teams = await apiGet('admin/prizes.php', {
+                action: 'teams'
+            });
+            var teamEl = document.getElementById('teamSelect');
+            teamEl.innerHTML = '<option value="">Select Team</option>';
+            if (teams.success) {
+                teams.data.forEach(function(t) {
+                    var opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.text = t.name;
+                    teamEl.appendChild(opt);
+                });
+            }
+
+            // Load referees into dropdown
+            var refs = await apiGet('admin/prizes.php', {
+                action: 'referees'
+            });
+            var refEl = document.getElementById('refereeSelect');
+            refEl.innerHTML = '<option value="">Select Referee</option>';
+            if (refs.success) {
+                refs.data.forEach(function(r) {
+                    var opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.text = r.name;
+                    refEl.appendChild(opt);
+                });
+            }
+
+            // Show correct group
+            onWinnerTypeChange();
+            document.getElementById('allocateModal').classList.add('show');
+        }
+
+        function closeAllocateModal() {
+            document.getElementById('allocateModal').classList.remove('show');
+        }
+
+        // ── Show/hide winner fields based on type ──
+        function onWinnerTypeChange() {
+            var type = document.getElementById('winnerType').value;
+            document.getElementById('grp-team').style.display = (type === 'team') ? 'block' : 'none';
+            document.getElementById('grp-player').style.display = (type === 'player') ? 'block' : 'none';
+            document.getElementById('grp-referee').style.display = (type === 'referee') ? 'block' : 'none';
+        }
+
+        // ── Auto-suggest MVP when MVP prize selected ──
+        async function onPrizeChange() {
+            var sel = document.getElementById('prizeId');
+            var opt = sel.options[sel.selectedIndex];
+            var title = opt ? (opt.getAttribute('data-title') || '') : '';
+            var mvpBox = document.getElementById('mvpBox');
+
+            if (title.toLowerCase().indexOf('mvp') !== -1) {
+                var res = await apiGet('admin/prizes.php', {
+                    action: 'mvp'
+                });
+                if (res.success && res.data) {
+                    mvpBox.style.display = 'block';
+                    mvpBox.innerHTML = '<strong>Suggested MVP:</strong> ' +
+                        res.data.player_name + ' (' + res.data.team_name + ') — ' +
+                        '<strong>' + res.data.total_points + ' points</strong>';
+                    document.getElementById('winnerType').value = 'player';
+                    document.getElementById('playerNameInput').value = res.data.player_name;
+                    onWinnerTypeChange();
+                }
+            } else {
+                mvpBox.style.display = 'none';
+            }
+        }
+
+        // ── Submit allocate ────────────────────────
+        async function submitAllocate() {
+            var alertEl = document.getElementById('allocateAlert');
+            var prizeId = document.getElementById('prizeId').value;
+            var winnerType = document.getElementById('winnerType').value;
+            var winnerName = '';
+            var teamId = null;
+
+            if (winnerType === 'team') {
+                var teamEl = document.getElementById('teamSelect');
+                var teamOp = teamEl.options[teamEl.selectedIndex];
+                winnerName = teamOp && teamOp.value ? teamOp.text : '';
+                teamId = teamEl.value || null;
+            } else if (winnerType === 'player') {
+                winnerName = document.getElementById('playerNameInput').value.trim();
+            } else if (winnerType === 'referee') {
+                var refEl = document.getElementById('refereeSelect');
+                var refOp = refEl.options[refEl.selectedIndex];
+                winnerName = refOp && refOp.value ? refOp.text : '';
+            }
+
+            if (!prizeId) {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = 'Please select a prize category.';
+                return;
+            }
+
+            if (!winnerName) {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = 'Please select or enter the winner.';
+                return;
+            }
+
+            var btn = document.getElementById('allocateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            var res = await apiPost('admin/prizes.php', {
+                action: 'allocate',
+                prize_id: prizeId,
+                winner_name: winnerName,
+                winner_type: winnerType,
+                team_id: teamId
+            });
+
+            if (res.success) {
+                alertEl.className = 'modal-alert show success';
+                alertEl.textContent = 'Prize allocated successfully!';
+                loadDistribution();
+                setTimeout(closeAllocateModal, 1500);
+            } else {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = res.message || 'Failed to allocate prize.';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Allocate';
+        }
+
+        // ── Open/close category modal ──────────────
+        function openCategoryModal() {
+            document.getElementById('catTitle').value = '';
+            document.getElementById('catCriteria').value = '';
+            document.getElementById('catAmount').value = '0';
+            document.getElementById('catType').value = 'trophy';
+            document.getElementById('categoryAlert').className = 'modal-alert';
+            document.getElementById('categoryModal').classList.add('show');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.remove('show');
+        }
+
+        // ── Submit category ────────────────────────
+        async function submitCategory() {
+            var alertEl = document.getElementById('categoryAlert');
+            var title = document.getElementById('catTitle').value.trim();
+            var criteria = document.getElementById('catCriteria').value.trim();
+
+            if (!title || !criteria) {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = 'Title and criteria are required.';
+                return;
+            }
+
+            var btn = document.getElementById('catBtn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            var res = await apiPost('admin/prizes.php', {
+                action: 'add_category',
+                title: title,
+                criteria: criteria,
+                amount: document.getElementById('catAmount').value,
+                prize_type: document.getElementById('catType').value
+            });
+
+            if (res.success) {
+                alertEl.className = 'modal-alert show success';
+                alertEl.textContent = 'Prize category added!';
+                loadCategories();
+                setTimeout(closeCategoryModal, 1500);
+            } else {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = res.message || 'Failed.';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Add Category';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDistribution();
+            loadCategories();
+        });
+    </script>
+</body>
+
+</html>

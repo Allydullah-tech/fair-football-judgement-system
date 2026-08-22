@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matches Management | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-box h3 {
+            margin-bottom: 20px;
+            color: #0b5d1e;
+            font-size: 20px;
+        }
+        
+        .modal-box .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .modal-box .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .modal-box .form-group input,
+        .modal-box .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .modal-box .form-group input:focus,
+        .modal-box .form-group select:focus {
+            border-color: #0b5d1e;
+            outline: none;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-save {
+            background: #0b5d1e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .btn-save:hover {
+            background: #15803d;
+        }
+        
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1;
+        }
+        
+        .btn-cancel:hover {
+            background: #d1d5db;
+        }
+        
+        .modal-alert {
+            display: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .modal-alert.show {
+            display: block;
+        }
+        
+        .modal-alert.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .modal-alert.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="teams.html"><i class="fa-solid fa-users"></i> Teams</a></li>
+                <li class="active"><a href="matches.html"><i class="fa-solid fa-futbol"></i> Matches</a></li>
+                <li><a href="referees.html"><i class="fa-solid fa-user-tie"></i> Referees</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="reports.html"><i class="fa-solid fa-file"></i> Reports</a></li>
+                <li><a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+
+            <div class="topbar">
+                <h1>Match Management</h1>
+                <button class="add-btn" onclick="openModal()">Schedule Match</button>
+            </div>
+
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Team A</th>
+                            <th>Team B</th>
+                            <th>Date</th>
+                            <th>Venue</th>
+                            <th>Referee</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchesTbody">
+                        <tr>
+                            <td colspan="6" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Schedule Match Modal -->
+    <div class="modal-overlay" id="scheduleModal">
+        <div class="modal-box">
+            <h3>Schedule New Match</h3>
+            <div class="modal-alert" id="modalAlert"></div>
+            <form id="scheduleForm">
+                <div class="form-group">
+                    <label>Team A</label>
+                    <select id="teamA">
+                        <option value="">Select Team A</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Team B</label>
+                    <select id="teamB">
+                        <option value="">Select Team B</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Match Date</label>
+                    <input type="date" id="matchDate">
+                </div>
+                <div class="form-group">
+                    <label>Venue</label>
+                    <input type="text" id="venue" placeholder="Enter venue name">
+                </div>
+                <div class="form-group">
+                    <label>Assign Referee</label>
+                    <select id="refereeId">
+                        <option value="">Select Referee</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-save" id="saveBtn">Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['administrator']);
+
+        async function loadMatches() {
+            const res = await apiGet('admin/matches.php', {
+                action: 'all'
+            });
+            if (res.success) {
+                const rows = res.data.map(m => `
+                    <tr>
+                        <td>${m.team_a}</td>
+                        <td>${m.team_b}</td>
+                        <td>${m.match_date}</td>
+                        <td>${m.venue}</td>
+                        <td>${m.referee || '—'}</td>
+                        <td>${statusBadge(m.status)}</td>
+                    </tr>`);
+                renderTable('matchesTbody', rows, 'No matches scheduled yet.');
+            }
+        }
+
+        async function openModal() {
+            // Load teams
+            const teams = await apiGet('admin/teams.php', {
+                action: 'all'
+            });
+            const teamA = document.getElementById('teamA');
+            const teamB = document.getElementById('teamB');
+            teamA.innerHTML = '<option value="">Select Team A</option>';
+            teamB.innerHTML = '<option value="">Select Team B</option>';
+            if (teams.success) {
+                teams.data.forEach(t => {
+                    teamA.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                    teamB.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                });
+            }
+
+            // Load referees
+            const refs = await apiGet('admin/referees.php');
+            const refSelect = document.getElementById('refereeId');
+            refSelect.innerHTML = '<option value="">Select Referee</option>';
+            if (refs.success) {
+                refs.data.forEach(r => {
+                    refSelect.innerHTML += `<option value="${r.id}">${r.name}</option>`;
+                });
+            }
+
+            document.getElementById('scheduleModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.remove('show');
+            document.getElementById('scheduleForm').reset();
+            const alert = document.getElementById('modalAlert');
+            alert.className = 'modal-alert';
+            alert.textContent = '';
+        }
+
+        document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const alertEl = document.getElementById('modalAlert');
+            const teamA = document.getElementById('teamA').value;
+            const teamB = document.getElementById('teamB').value;
+            const matchDate = document.getElementById('matchDate').value;
+            const venue = document.getElementById('venue').value.trim();
+            const refereeId = document.getElementById('refereeId').value;
+
+            if (!teamA || !teamB || !matchDate || !venue) {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = 'Please fill all required fields.';
+                return;
+            }
+
+            if (teamA === teamB) {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = 'Team A and Team B cannot be the same.';
+                return;
+            }
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Scheduling...';
+
+            const res = await apiPost('admin/matches.php', {
+                action: 'schedule',
+                team_a_id: teamA,
+                team_b_id: teamB,
+                match_date: matchDate,
+                venue: venue,
+                referee_id: refereeId || null
+            });
+
+            if (res.success) {
+                alertEl.className = 'modal-alert show success';
+                alertEl.textContent = 'Match scheduled successfully!';
+                loadMatches();
+                setTimeout(closeModal, 1500);
+            } else {
+                alertEl.className = 'modal-alert show error';
+                alertEl.textContent = res.message || 'Failed to schedule match.';
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Schedule';
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('scheduleModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', loadMatches);
+    </script>
+
+</body>
+
+</html>

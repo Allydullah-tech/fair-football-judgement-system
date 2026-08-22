@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="teams.html"><i class="fa-solid fa-users"></i> Teams</a></li>
+                <li><a href="matches.html"><i class="fa-solid fa-futbol"></i> Matches</a></li>
+                <li><a href="referees.html"><i class="fa-solid fa-user-tie"></i> Referees</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="reports.html"><i class="fa-solid fa-file"></i> Reports</a></li>
+                <li class="active"><a href="settings.html"><i class="fa-solid fa-gear"></i> Settings</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>System Settings</h1>
+            </div>
+            <div class="form-container">
+                <div id="settingsAlert" style="display:none;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label>System Name</label>
+                        <input type="text" id="systemName" placeholder="Loading...">
+                    </div>
+                    <div class="form-group">
+                        <label>Administrator Email</label>
+                        <input type="email" id="adminEmail" placeholder="Loading...">
+                    </div>
+                    <div class="form-group">
+                        <label>Tournament Season</label>
+                        <input type="text" id="tournamentSeason" placeholder="Loading...">
+                    </div>
+                    <button type="submit" class="submit-btn">Save Settings</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['administrator']);
+
+        async function loadSettings() {
+            const res = await apiGet('admin/settings.php');
+            if (res.success) {
+                document.getElementById('systemName').value = res.data.system_name || '';
+                document.getElementById('adminEmail').value = res.data.admin_email || '';
+                document.getElementById('tournamentSeason').value = res.data.season || '';
+            }
+        }
+
+        document.getElementById('settingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const alertEl = document.getElementById('settingsAlert');
+            const res = await apiPost('admin/settings.php', {
+                action: 'update',
+                system_name: document.getElementById('systemName').value,
+                admin_email: document.getElementById('adminEmail').value,
+                season: document.getElementById('tournamentSeason').value
+            });
+            alertEl.style.display = 'block';
+            if (res.success) {
+                alertEl.style.background = '#d1fae5';
+                alertEl.style.color = '#065f46';
+                alertEl.textContent = 'Settings saved successfully.';
+            } else {
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.textContent = res.message || 'Failed to save settings.';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadSettings);
+    </script>
+</body>
+
+</html>

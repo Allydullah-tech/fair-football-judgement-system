@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assigned Matches | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li class="active"><a href="assigned-matches.html"><i class="fa-solid fa-futbol"></i> Assigned Matches</a></li>
+                <li><a href="submit-results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Submit Results</a></li>
+                <li><a href="player-statistics.html"><i class="fa-solid fa-chart-bar"></i> Player Statistics</a></li>
+                <li><a href="match-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Match History</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Assigned Matches</h1>
+            </div>
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Match</th>
+                            <th>Date</th>
+                            <th>Venue</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignedTbody">
+                        <tr>
+                            <td colspan="4" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['referee']);
+
+        async function loadAssigned() {
+            const res = await apiGet('referee/assigned_matches.php');
+            if (res.success) {
+                const rows = res.data.map(m => `
+                    <tr>
+                        <td>${m.team_a} vs ${m.team_b}</td>
+                        <td>${m.match_date}</td>
+                        <td>${m.venue}</td>
+                        <td>${statusBadge(m.status)}</td>
+                    </tr>`);
+                renderTable('assignedTbody', rows, 'No assigned matches.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAssigned);
+    </script>
+</body>
+
+</html>

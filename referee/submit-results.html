@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Results | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="assigned-matches.html"><i class="fa-solid fa-futbol"></i> Assigned Matches</a></li>
+                <li class="active"><a href="submit-results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Submit Results</a></li>
+                <li><a href="player-statistics.html"><i class="fa-solid fa-chart-bar"></i> Player Statistics</a></li>
+                <li><a href="match-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Match History</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Submit Match Results</h1>
+            </div>
+            <div class="form-container">
+                <div id="formAlert" style="display:none;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+                <form id="submitResultForm">
+                    <div class="form-group">
+                        <label>Match</label>
+                        <select id="matchSelect">
+                            <option value="">Loading matches...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Team A Score</label>
+                        <input type="number" id="scoreA" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Team B Score</label>
+                        <input type="number" id="scoreB" placeholder="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Match Notes</label>
+                        <textarea id="matchNotes" rows="5" placeholder="Enter any notes about the match..."></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit Result</button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['referee']);
+
+        async function loadMatchOptions() {
+            const res = await apiGet('referee/assigned_matches.php');
+            const select = document.getElementById('matchSelect');
+            select.innerHTML = '<option value="">Select Match</option>';
+            if (res.success && res.data.length > 0) {
+                res.data.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = `${m.team_a} vs ${m.team_b} — ${m.match_date}`;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">No matches assigned</option>';
+            }
+        }
+
+        document.getElementById('submitResultForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const alertEl = document.getElementById('formAlert');
+            const matchId = document.getElementById('matchSelect').value;
+            const scoreA = document.getElementById('scoreA').value;
+            const scoreB = document.getElementById('scoreB').value;
+            const notes = document.getElementById('matchNotes').value;
+
+            if (!matchId || scoreA === '' || scoreB === '') {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.textContent = 'Please select a match and enter both scores.';
+                return;
+            }
+
+            const res = await apiPost('referee/submit_results.php', {
+                match_id: matchId,
+                score_a: scoreA,
+                score_b: scoreB,
+                notes: notes
+            });
+
+            alertEl.style.display = 'block';
+            if (res.success) {
+                alertEl.style.background = '#d1fae5';
+                alertEl.style.color = '#065f46';
+                alertEl.textContent = 'Result submitted successfully!';
+                document.getElementById('submitResultForm').reset();
+                loadMatchOptions();
+            } else {
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.textContent = res.message || 'Submission failed.';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadMatchOptions);
+    </script>
+</body>
+
+</html>

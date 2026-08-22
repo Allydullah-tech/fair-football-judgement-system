@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Players | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="register-team.html"><i class="fa-solid fa-users"></i> Register Team</a></li>
+                <li class="active"><a href="register-players.html"><i class="fa-solid fa-person-running"></i> Register Players</a></li>
+                <li><a href="fixtures.html"><i class="fa-solid fa-futbol"></i> Fixtures</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+
+            <div class="topbar">
+                <h1>Register Players</h1>
+                <div class="admin-info">
+                    <i class="fa-solid fa-user"></i>
+                    <span id="userName">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Add Player Form -->
+            <div class="form-container" style="margin-bottom:30px;">
+                <h3 style="margin-bottom:20px;color:#0b5d1e;">Add New Player</h3>
+                <div id="formAlert" style="display:none;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+                <form id="addPlayerForm">
+                    <div class="form-group">
+                        <label>Player Name</label>
+                        <input type="text" id="playerName" placeholder="Enter player full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Jersey Number</label>
+                        <input type="number" id="jerseyNumber" placeholder="Enter jersey number" min="1" max="99">
+                    </div>
+                    <div class="form-group">
+                        <label>Position</label>
+                        <select id="position">
+                            <option value="">Select Position</option>
+                            <option value="Goalkeeper">Goalkeeper</option>
+                            <option value="Defender">Defender</option>
+                            <option value="Midfielder">Midfielder</option>
+                            <option value="Forward">Forward</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="submit-btn">Add Player</button>
+                </form>
+            </div>
+
+            <!-- Players Table -->
+            <div class="table-section">
+                <div class="section-header">
+                    <h2>Registered Players</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playersTbody">
+                        <tr>
+                            <td colspan="4" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['manager']);
+
+        async function loadPlayers() {
+            const res = await apiGet('manager/players.php');
+            if (res.success) {
+                const rows = res.data.map(p => `
+                    <tr>
+                        <td>${p.jersey_number}</td>
+                        <td>${p.name}</td>
+                        <td>${p.position}</td>
+                        <td><button onclick="removePlayer(${p.id})" style="background:#dc2626;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">Remove</button></td>
+                    </tr>`);
+                renderTable('playersTbody', rows, 'No players registered yet.');
+            }
+        }
+
+        async function removePlayer(id) {
+            if (!confirm('Remove this player?')) return;
+            const res = await apiPost('manager/players.php', {
+                action: 'delete',
+                id
+            });
+            if (res.success) {
+                showToast('Player removed.');
+                loadPlayers();
+            } else {
+                showToast(res.message || 'Failed to remove player.', 'error');
+            }
+        }
+
+        document.getElementById('addPlayerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const alertEl = document.getElementById('formAlert');
+            const playerName = document.getElementById('playerName').value.trim();
+            const jerseyNumber = document.getElementById('jerseyNumber').value;
+            const position = document.getElementById('position').value;
+
+            if (!playerName || !jerseyNumber || !position) {
+                alertEl.style.display = 'block';
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.textContent = 'Please fill all fields.';
+                return;
+            }
+
+            const res = await apiPost('manager/players.php', {
+                action: 'add',
+                name: playerName,
+                jersey_number: jerseyNumber,
+                position: position
+            });
+
+            alertEl.style.display = 'block';
+            if (res.success) {
+                alertEl.style.background = '#d1fae5';
+                alertEl.style.color = '#065f46';
+                alertEl.textContent = 'Player added successfully!';
+                document.getElementById('addPlayerForm').reset();
+                loadPlayers();
+            } else {
+                alertEl.style.background = '#fee2e2';
+                alertEl.style.color = '#991b1b';
+                alertEl.textContent = res.message || 'Failed to add player.';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadPlayers);
+    </script>
+
+</body>
+
+</html>

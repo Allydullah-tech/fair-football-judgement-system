@@ -1,0 +1,22 @@
+@media(max-width: 900px) {
+    .cards {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        width: 100%;
+    }
+}
+
+@media(max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .nav-links {
+        flex-direction: column;
+        text-align: center;
+    }
+    table {
+        font-size: 14px;
+    }
+}

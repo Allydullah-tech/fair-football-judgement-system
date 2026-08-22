@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results | FFJS</title>
+
+    <!-- KEEPING ORIGINAL PATHS -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/tables.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h2 class="logo">FFJS</h2>
+
+        <ul class="nav-links">
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="results.html">Results</a></li>
+            <li><a href="standings.html">Standings</a></li>
+            <li><a href="prize-distribution.html">Prizes</a></li>
+            <li><a href="../about.html">About</a></li>
+            <li><a href="../login.html" class="login-btn">Login</a></li>
+        </ul>
+    </nav>
+
+    <section class="page-header">
+        <h1>Match Results</h1>
+        <p>Transparent and verified football results</p>
+    </section>
+
+    <section class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Match</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="resultsTbody">
+                <tr>
+                    <td colspan="3" style="text-align:center;padding:20px;color:#888;">
+                        Loading...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <footer>
+        <p>© 2026 Fair Football Judgement System | Final Year Project</p>
+    </footer>
+
+    <script>
+        async function loadResults() {
+
+            try {
+
+                // FIXED API PATH FOR VIEWER SECTION
+                var res = await fetch('../backend/api/viewer/results.php');
+
+                var data = await res.json();
+
+                var tbody = document.getElementById('resultsTbody');
+
+                function badge(status) {
+
+                    if (status === 'verified') {
+                        return '<span class="completed">Verified</span>';
+                    } else {
+                        return '<span class="pending">Pending Review</span>';
+                    }
+                }
+
+                if (data.success && data.data && data.data.length > 0) {
+
+                    tbody.innerHTML = data.data.map(function(r) {
+
+                        return '<tr>' +
+                            '<td>' + r.team_a + ' vs ' + r.team_b + '</td>' +
+                            '<td>' + r.score + '</td>' +
+                            '<td>' + badge(r.status) + '</td>' +
+                            '</tr>';
+
+                    }).join('');
+
+                } else {
+
+                    tbody.innerHTML =
+                        '<tr>' +
+                        '<td colspan="3" style="text-align:center;padding:20px;color:#888;">' +
+                        'No results yet.' +
+                        '</td>' +
+                        '</tr>';
+                }
+
+            } catch (e) {
+
+                document.getElementById('resultsTbody').innerHTML =
+                    '<tr>' +
+                    '<td colspan="3" style="text-align:center;padding:20px;color:#888;">' +
+                    'Could not load results.' +
+                    '</td>' +
+                    '</tr>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadResults);
+    </script>
+
+</body>
+
+</html>

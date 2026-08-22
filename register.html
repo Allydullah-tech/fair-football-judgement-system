@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | FFJS</title>
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+
+    <div class="auth-container">
+        <div class="auth-box">
+
+            <h2>Create Account</h2>
+            <p>Register to access the system</p>
+
+            <div class="auth-alert" id="formAlert">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="alertMsg"></span>
+            </div>
+
+            <form id="registerForm" novalidate>
+
+                <div class="input-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" placeholder="Enter full name">
+                    <span class="error-msg">Full name is required</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="Enter email">
+                    <span class="error-msg">Enter a valid email address</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="role">Role</label>
+                    <select id="role">
+                        <option value="">Select Role</option>
+                        <option value="administrator">Administrator</option>
+                        <option value="referee">Referee</option>
+                        <option value="manager">Manager</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                    <span class="error-msg">Please select a role</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="securityQuestion">Security Question</label>
+                    <select id="securityQuestion">
+                        <option value="">Select a security question</option>
+                        <option value="What is the name of your first pet?">What is the name of your first pet?</option>
+                        <option value="What primary school did you attend?">What primary school did you attend?</option>
+                        <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                        <option value="In what city were you born?">In what city were you born?</option>
+                        <option value="What is your favourite football team?">What is your favourite football team?</option>
+                    </select>
+                    <span class="error-msg">Please select a security question</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="securityAnswer">Security Answer</label>
+                    <input type="text" id="securityAnswer" placeholder="Enter your answer">
+                    <span class="error-msg">Security answer is required</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Create password">
+                    <span class="error-msg">Password must be at least 6 characters</span>
+                </div>
+
+                <div class="input-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm password">
+                    <span class="error-msg">Passwords do not match</span>
+                </div>
+
+                <button type="submit" class="auth-btn" id="submitBtn">Register</button>
+
+            </form>
+
+            <div class="bottom-link">
+                <p>Already have an account? <a href="login.html">Login</a></p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function showAlert(type, msg) {
+            const alert = document.getElementById('formAlert');
+            const alertMsg = document.getElementById('alertMsg');
+            const icon = alert.querySelector('i');
+            alert.className = 'auth-alert show ' + type;
+            icon.className = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
+            alertMsg.textContent = msg;
+        }
+
+        function setError(inputId, msg) {
+            const group = document.getElementById(inputId).closest('.input-group');
+            group.classList.add('error');
+            if (msg) group.querySelector('.error-msg').textContent = msg;
+        }
+
+        function clearAllErrors() {
+            document.querySelectorAll('.input-group').forEach(g => g.classList.remove('error'));
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearAllErrors();
+
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const role = document.getElementById('role').value;
+            const securityQuestion = document.getElementById('securityQuestion').value;
+            const securityAnswer = document.getElementById('securityAnswer').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            let valid = true;
+
+            if (!fullName) {
+                setError('fullName', 'Full name is required');
+                valid = false;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                setError('email', 'Enter a valid email address');
+                valid = false;
+            }
+            if (!role) {
+                setError('role', 'Please select a role');
+                valid = false;
+            }
+            if (!securityQuestion) {
+                setError('securityQuestion', 'Please select a security question');
+                valid = false;
+            }
+            if (!securityAnswer) {
+                setError('securityAnswer', 'Security answer is required');
+                valid = false;
+            }
+            if (password.length < 6) {
+                setError('password', 'Password must be at least 6 characters');
+                valid = false;
+            }
+            if (password !== confirmPassword) {
+                setError('confirmPassword', 'Passwords do not match');
+                valid = false;
+            }
+
+            if (!valid) {
+                showAlert('error', 'Please fix the errors above.');
+                return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Registering...';
+
+            try {
+                const response = await fetch('backend/api/auth/register.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email,
+                        role: role,
+                        security_question: securityQuestion,
+                        security_answer: securityAnswer,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('success', 'Account created! Redirecting to login...');
+                    setTimeout(() => window.location.href = 'login.html', 2000);
+                } else {
+                    showAlert('error', data.message || 'Registration failed. Try again.');
+                }
+
+            } catch (err) {
+                showAlert('error', 'Could not connect to server. Try again later.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Register';
+            }
+        });
+    </script>
+
+</body>
+
+</html>

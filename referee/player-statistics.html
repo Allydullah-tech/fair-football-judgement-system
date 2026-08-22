@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Statistics | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .stats-table input[type="number"] {
+            width: 65px;
+            padding: 6px 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .stats-table input[type="number"]:focus {
+            border-color: #0b5d1e;
+            outline: none;
+        }
+        
+        .team-header td {
+            background: #f0fdf4;
+            font-weight: bold;
+            color: #0b5d1e;
+            padding: 10px 15px;
+            border-left: 4px solid #0b5d1e;
+        }
+        
+        .points-preview {
+            font-weight: bold;
+            color: #0b5d1e;
+            font-size: 15px;
+        }
+        
+        .save-btn {
+            background: #0b5d1e;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 6px;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .save-btn:hover {
+            background: #15803d;
+        }
+        
+        .info-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #166534;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="assigned-matches.html"><i class="fa-solid fa-futbol"></i> Assigned Matches</a></li>
+                <li><a href="submit-results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Submit Results</a></li>
+                <li class="active"><a href="player-statistics.html"><i class="fa-solid fa-chart-bar"></i> Player Statistics</a></li>
+                <li><a href="match-history.html"><i class="fa-solid fa-clock-rotate-left"></i> Match History</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Player Statistics</h1>
+                <div class="admin-info"><i class="fa-solid fa-user"></i><span id="userName">Loading...</span></div>
+            </div>
+
+            <div class="form-container" style="margin-bottom:24px;">
+                <h3 style="margin-bottom:16px;color:#0b5d1e;">Select Match</h3>
+                <div class="form-group">
+                    <label>Your Assigned Match</label>
+                    <select id="matchSelect" onchange="loadPlayers()">
+                        <option value="">Loading matches...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="pageAlert" style="display:none;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+
+            <div class="table-section" id="statsSection" style="display:none;">
+                <div class="section-header">
+                    <h2>Enter Player Statistics</h2>
+                </div>
+                <div class="info-box">
+                    <strong>Scoring:</strong> Goal = 3pts | Assist = 1pt | Most Passes in match = 1pt | Yellow Card = -1pt | Red Card = -3pts
+                </div>
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Goals</th>
+                            <th>Assists</th>
+                            <th>Passes</th>
+                            <th>Yellow</th>
+                            <th>Red</th>
+                            <th>Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody"></tbody>
+                </table>
+                <button class="save-btn" onclick="saveStatistics()">Save Statistics</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['referee']);
+
+        var players = [];
+
+        async function loadMatches() {
+            var res = await apiGet('referee/player_statistics.php', {
+                action: 'matches'
+            });
+            var select = document.getElementById('matchSelect');
+            select.innerHTML = '<option value="">Select a match</option>';
+
+            if (res.success && res.data && res.data.length > 0) {
+                res.data.forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.team_a + ' vs ' + m.team_b + ' — ' + m.match_date + ' (' + m.status + ')';
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">No assigned matches found</option>';
+                showPageAlert('No matches assigned to you yet. Ask the admin to assign you to a match.', 'error');
+            }
+        }
+
+        async function loadPlayers() {
+            var matchId = document.getElementById('matchSelect').value;
+            var section = document.getElementById('statsSection');
+            var tbody = document.getElementById('statsTableBody');
+
+            if (!matchId) {
+                section.style.display = 'none';
+                return;
+            }
+
+            var res = await apiGet('referee/player_statistics.php', {
+                action: 'players',
+                match_id: matchId
+            });
+
+            if (!res.success || !res.data || res.data.length === 0) {
+                section.style.display = 'none';
+                showPageAlert('No players found for this match. Make sure team managers have registered their players.', 'error');
+                return;
+            }
+
+            players = res.data;
+            section.style.display = 'block';
+            hidePageAlert();
+
+            // Load existing stats
+            var existing = await apiGet('referee/player_statistics.php', {
+                action: 'stats',
+                match_id: matchId
+            });
+            var existingMap = {};
+            if (existing.success && existing.data && existing.data.length > 0) {
+                existing.data.forEach(function(s) {
+                    existingMap[s.player_id] = s;
+                });
+            }
+
+            var currentTeam = '';
+            var html = '';
+
+            players.forEach(function(p) {
+                var ex = existingMap[p.id] || {};
+                var goals = ex.goals !== undefined ? ex.goals : 0;
+                var assists = ex.assists !== undefined ? ex.assists : 0;
+                var passes = ex.successful_passes !== undefined ? ex.successful_passes : 0;
+                var yellow = ex.yellow_cards !== undefined ? ex.yellow_cards : 0;
+                var red = ex.red_cards !== undefined ? ex.red_cards : 0;
+
+                if (p.team_name !== currentTeam) {
+                    currentTeam = p.team_name;
+                    html += '<tr class="team-header"><td colspan="9">' + p.team_name + '</td></tr>';
+                }
+                html += '<tr>';
+                html += '<td>' + p.jersey_number + '</td>';
+                html += '<td><strong>' + p.name + '</strong></td>';
+                html += '<td>' + p.team_name + '</td>';
+                html += '<td><input type="number" id="goals-' + p.id + '" value="' + goals + '" min="0" onchange="calcAllPoints()"></td>';
+                html += '<td><input type="number" id="assists-' + p.id + '" value="' + assists + '" min="0" onchange="calcAllPoints()"></td>';
+                html += '<td><input type="number" id="passes-' + p.id + '" value="' + passes + '" min="0" onchange="calcAllPoints()"></td>';
+                html += '<td><input type="number" id="yellow-' + p.id + '" value="' + yellow + '" min="0" max="2" onchange="calcAllPoints()"></td>';
+                html += '<td><input type="number" id="red-' + p.id + '" value="' + red + '" min="0" max="1" onchange="calcAllPoints()"></td>';
+                html += '<td><span class="points-preview" id="pts-' + p.id + '">0</span></td>';
+                html += '</tr>';
+            });
+
+            tbody.innerHTML = html;
+            calcAllPoints();
+        }
+
+        function getVal(id) {
+            var el = document.getElementById(id);
+            return el ? parseInt(el.value) || 0 : 0;
+        }
+
+        function getMaxPassesPlayerId() {
+            var maxPasses = 0;
+            var maxId = null;
+            players.forEach(function(p) {
+                var passes = getVal('passes-' + p.id);
+                if (passes > maxPasses) {
+                    maxPasses = passes;
+                    maxId = p.id;
+                }
+            });
+            return maxPasses > 0 ? maxId : null;
+        }
+
+        function calcAllPoints() {
+            var maxPassesId = getMaxPassesPlayerId();
+            players.forEach(function(p) {
+                var goals = getVal('goals-' + p.id);
+                var assists = getVal('assists-' + p.id);
+                var yellow = getVal('yellow-' + p.id);
+                var red = getVal('red-' + p.id);
+                var passPt = p.id === maxPassesId ? 1 : 0;
+                var total = (goals * 3) + assists + passPt + (yellow * -1) + (red * -3);
+                var el = document.getElementById('pts-' + p.id);
+                if (el) el.textContent = total;
+            });
+        }
+
+        async function saveStatistics() {
+            var matchId = document.getElementById('matchSelect').value;
+            if (!matchId) {
+                showPageAlert('Please select a match.', 'error');
+                return;
+            }
+
+            var statistics = players.map(function(p) {
+                return {
+                    player_id: p.id,
+                    goals: getVal('goals-' + p.id),
+                    assists: getVal('assists-' + p.id),
+                    successful_passes: getVal('passes-' + p.id),
+                    yellow_cards: getVal('yellow-' + p.id),
+                    red_cards: getVal('red-' + p.id)
+                };
+            });
+
+            var res = await apiPost('referee/player_statistics.php', {
+                action: 'save',
+                match_id: matchId,
+                statistics: statistics
+            });
+
+            if (res.success) {
+                showPageAlert('Statistics saved successfully!', 'success');
+            } else {
+                showPageAlert(res.message || 'Failed to save statistics.', 'error');
+            }
+        }
+
+        function showPageAlert(msg, type) {
+            var el = document.getElementById('pageAlert');
+            el.style.display = 'block';
+            el.style.background = type === 'success' ? '#d1fae5' : '#fee2e2';
+            el.style.color = type === 'success' ? '#065f46' : '#991b1b';
+            el.textContent = msg;
+        }
+
+        function hidePageAlert() {
+            document.getElementById('pageAlert').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadMatches);
+    </script>
+</body>
+
+</html>

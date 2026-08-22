@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixtures | FFJS</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>FFJS</h2>
+            </div>
+            <ul class="menu">
+                <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="register-team.html"><i class="fa-solid fa-users"></i> Register Team</a></li>
+                <li><a href="register-players.html"><i class="fa-solid fa-person-running"></i> Register Players</a></li>
+                <li class="active"><a href="fixtures.html"><i class="fa-solid fa-futbol"></i> Fixtures</a></li>
+                <li><a href="results.html"><i class="fa-solid fa-square-poll-horizontal"></i> Results</a></li>
+                <li><a href="prizes.html"><i class="fa-solid fa-trophy"></i> Prizes</a></li>
+                <li><a href="#" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="topbar">
+                <h1>Upcoming Fixtures</h1>
+            </div>
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Match</th>
+                            <th>Date</th>
+                            <th>Venue</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fixturesTbody">
+                        <tr>
+                            <td colspan="4" style="text-align:center;padding:20px;color:#888;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script src="../js/app.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script>
+        requireAuth(['manager']);
+
+        async function loadFixtures() {
+            const res = await apiGet('manager/fixtures.php');
+            if (res.success) {
+                const rows = res.data.map(f => `
+                    <tr>
+                        <td>${f.team_a} vs ${f.team_b}</td>
+                        <td>${f.match_date}</td>
+                        <td>${f.venue}</td>
+                        <td>${statusBadge(f.status)}</td>
+                    </tr>`);
+                renderTable('fixturesTbody', rows, 'No upcoming fixtures.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFixtures);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,68 @@
+/* Page Header */
+
+.page-header {
+    padding: 60px 8%;
+    text-align: center;
+    background: #0b5d1e;
+    color: white;
+}
+
+.page-header h1 {
+    font-size: 40px;
+    margin-bottom: 15px;
+}
+
+
+/* Tables */
+
+.table-container {
+    padding: 50px 8%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+table thead {
+    background: #0b5d1e;
+    color: white;
+}
+
+table th,
+table td {
+    padding: 15px;
+    border: 1px solid #ddd;
+}
+
+.completed {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.pending {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+
+/* About */
+
+.about-section {
+    padding: 70px 10%;
+}
+
+.about-section h1 {
+    margin-bottom: 25px;
+    color: #0b5d1e;
+}
+
+.about-section p {
+    margin-bottom: 20px;
+    line-height: 1.8;
+}
